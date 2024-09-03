@@ -33,12 +33,12 @@ Created on Fri Nov 10 21:52:18 2023
 # ETH API 
 # https://etherscan.io/apis
 
-# for Ethereum you need an API key, mandatory !
+# for Ethereum your need an API key, mandatory !
+
 
 import json
 import requests
 import datetime as DT
-# import time
 import pandas as pd
 import configparser
 import sys, os
@@ -50,9 +50,6 @@ import sys, os
 config = configparser.ConfigParser()
 
 ini_path = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),'get-wallet.ini')
-
-# old ini_path
-# ini_path = os.path.join(os.getcwd(),'pdf2image-ext.ini')
 
 config.read(ini_path)
 # print(ini_path)
@@ -67,7 +64,6 @@ csv_outfile = config.get('settings','csv_outfile')
 def generate_wallet_list():
 
     # print("Generate token list from Excel")
-    # df = pd.read_excel(r'G:\Mon Drive\finance\invest.xlsm', sheet_name='wallets', header=0)
     df = pd.read_excel(excel_file, sheet_name=excel_sheet, header=0)
 
     # uncomment for storage in CSV file
@@ -99,6 +95,11 @@ def generate_wallet_list():
                 myaddress=str(row['Address'])
                 balance = API_call_ETH_address(myaddress)
 
+            case 'WalletSOL':
+                # call the API with address and return adjusted balance
+                myaddress=str(row['Address'])
+                balance = API_call_SOL_address(myaddress)
+            
             case _:
                 # print('This is a SPOT address ', row['Address'])
                 continue
@@ -182,9 +183,43 @@ def API_call_ETH_address(myaddress):
         balance=balance/1000000000000000000
         return balance
 
+
+# API call on solscan
+# balance must be adjusted, divide by 1000000000
+
+def API_call_SOL_address(myaddress):
+   
+
+        url = "https://api.mainnet-beta.solana.com"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getBalance",
+            "params": [
+                str(myaddress)
+            ]
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+        if response.status_code == 200:
+
+            obj = json.loads(response.text)
+
+            balance = int(obj['result']['value'])
+
+        else:
+
+            balance='0'
+
+        # balance adjustment 
+
+        balance=balance/1000000000
+        return balance
+
+
 generate_wallet_list()
-
-
 
 
 
